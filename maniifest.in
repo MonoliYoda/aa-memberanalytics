@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+recursive-include memberanalytics *.py
+recursive-include memberanalytics/static *
+recursive-include memberanalytics/templates *
