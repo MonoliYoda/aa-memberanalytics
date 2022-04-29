@@ -62,7 +62,7 @@ class Owner(models.Model):
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
-        related_name="+",
+        related_name="anal_owner",
         help_text="character used to sync this corporation from ESI",
     )
 
