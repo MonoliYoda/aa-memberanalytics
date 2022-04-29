@@ -54,7 +54,7 @@ class Owner(models.Model):
         EveCorporationInfo,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="mining_corporation",
+        related_name="anal_corporation",
     )
     # regular
     character_ownership = models.ForeignKey(
