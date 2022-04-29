@@ -3,13 +3,41 @@
 
 <div class="panel panel-primary">
   <div class="panel-heading">
-    <h3 class="panel-title">text</h3>
+    <h3 class="panel-title">All Characters</h3>
     <a class="btn btn-default navbar-btn" style="float: right" href="{% url 'memberanalytics:add_owner' %}">
       Add Corporation
   </a>
   </div>
-  <div class="panel-body" style="min-height: 100px">{{ text }}</div>
+  <div class="panel-body" style="min-height: 100px">
+    <table id="characters-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width:20%;">Character name</th>
+          <th class="text-center" style="width:20%;">In corp since</th>
+          <th class="text-center" style="width:20%;">Tracking since</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for char in characters %}
+          <tr>
+            <td class="text-center"><a href="{% url 'memberanalytics:member_details' id=char.character.id %}">{{char.character.name}}</a></td>
+            <td class="text-center">{{char.joined_corp}}</td>
+            <td class="text-center">{{char.tracking_since}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-{% endblock %} {% block extra_javascript %} {% endblock %} {% block extra_css %}
+{% endblock %}
+{% block extra_javascript %}
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#characters-table').DataTable()
+  });
+</script>
+{% endblock %} {% block extra_css %}
 {% endblock %} {% block extra_script %} {% endblock %}

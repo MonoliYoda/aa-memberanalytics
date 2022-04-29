@@ -3,16 +3,33 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponseNotFound
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCorporationInfo
+from eveuniverse.models import EveEntity
 from esi.decorators import token_required
-from .models import Owner, CharacterSessionRecord
+from .models import Owner, CharacterSessionRecord, CharacterDetails
 from . import tasks
+from .managers import ExtendedTS3Manager
 
 
 @login_required
 @permission_required("memberanalytics.basic_access")
 def index(request):
-    context = {"text": "Hello, World!"}
+    characters = CharacterDetails.objects.all()
+    ts3 = ExtendedTS3Manager()
+    ts3.show_server()
+
+    context = {"characters": characters}
     return render(request, "memberanalytics/index.html", context)
+
+
+@login_required
+@permission_required("memberanalytics.basic_access")
+def member_details(request, id):
+    character = EveEntity.objects.get(id=id)
+    sessions = CharacterSessionRecord.objects.filter(character=character)
+    avg_session_length = 0
+    context = {"sessions": sessions, "character": character}
+    return render(request, "memberanalytics/member_details.html", context)
+
 
 @login_required
 @permission_required("memberanalytics.basic_access")

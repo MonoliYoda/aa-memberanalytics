@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 from eveuniverse.models import EveEntity
 from allianceauth.eveonline.models import EveCorporationInfo
 from allianceauth.authentication.models import CharacterOwnership
@@ -18,17 +19,17 @@ class General(models.Model):
 
 class CharacterDetails(models.Model):
     character = models.ForeignKey(EveEntity, on_delete=models.CASCADE, help_text="EVE Character")
-    joined_corp = models.DateTimeField()
-    ship_type_id = models.IntegerField()
+    joined_corp = models.DateTimeField(null=True)
+    tracking_since = models.DateTimeField(auto_now_add=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.character.name}"
 
 class CharacterSessionRecord(models.Model):
     character = models.ForeignKey(EveEntity, on_delete=models.CASCADE, help_text="EVE Character")
-    location_id = models.IntegerField()
-    ship_type_id = models.IntegerField()
-    session_start = models.DateTimeField(null=False, default=None, help_text="Time this character last logged on")
+    location_id = models.IntegerField(null=True)
+    ship_type_id = models.IntegerField(null=True)
+    session_start = models.DateTimeField(null=True, default=None, help_text="Time this character last logged on")
     session_end = models.DateTimeField(null=True, default=None, help_text="Time this character last logged off")
 
     def __str__(self) -> str:
@@ -38,7 +39,14 @@ class CharacterSessionRecord(models.Model):
         if self.session_end is not None:
             return self.session_end - self.session_start
         else:
-            return 0
+            return -1
+    
+    def session_length(self) -> int:
+        if self.session_end is not None:
+            hours, minutes, seconds = self.time_logged_on().split(":")
+            return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        else:
+            return -1
 
 class Owner(models.Model):
     # pk
@@ -57,6 +65,9 @@ class Owner(models.Model):
         related_name="+",
         help_text="character used to sync this corporation from ESI",
     )
+
+    def __str__(self):
+        return f"{self.character_ownership}, {self.corporation}"
 
     def fetch_token(self) -> Token:
         """Return valid token for this mining corp or raise exception on any error."""
@@ -79,7 +90,22 @@ class Owner(models.Model):
             corporation_id=self.corporation.corporation_id,
             token=self.fetch_token().valid_access_token()
         ).results()
-        print(len(members))
         for member in members:
-            print(member['character_id'])
+            character, _ = EveEntity.objects.get_or_create(id=member["character_id"])
+            if character.category is None:
+                character.update_from_esi()    
+            character_details, _ = CharacterDetails.objects.get_or_create(character=character)
+            character_details.joined_corp = member["start_date"]
+            character_details.save()
+
+            latest_session, _ = CharacterSessionRecord.objects.get_or_create(character=character, session_start=member["logon_date"])
+            if latest_session.session_end is None and latest_session.session_start < member["logoff_date"]:
+                latest_session.session_end = member["logoff_date"]
+                latest_session.locaton_id = member["location_id"]
+                latest_session.ship_type_id = member["ship_type_id"]
+                latest_session.save()
+
+            #character.update_from_esi()
+            #print(character.name)
+            #print(member['character_id'])
 
