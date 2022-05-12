@@ -58,7 +58,7 @@
         {
           x: new Date("{{session.session_start.isoformat}}"),
           y: {% if session.time_logged_on == -1 %}
-            (new Date().getTime() - new Date("{{session.session_start.isoformat}}").getTime()) / 1000
+              1
             {% else %}
               {{session.time_logged_on.total_seconds}}
             {% endif %}
